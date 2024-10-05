@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, FormEvent } from "react"
 import { ApiConfig, sendLLMMessage } from "../common/sendLLMMessage"
-import { File, Selection, WebviewMessage } from "../shared_types"
+import { File, Selection, WebviewMessage, WorkspaceFile } from "../shared_types"
 import { awaitVSCodeResponse, getVSCodeAPI, resolveAwaitingVSCodeResponse } from "./getVscodeApi"
 
 import { marked } from 'marked';
@@ -8,6 +8,7 @@ import { MarkdownRender, BlockCode } from "./MarkdownRender";
 
 import * as vscode from 'vscode'
 import { FilesSelector, IncludedFiles } from "./components/Files";
+import FilePicker from "./components/FilePicker";
 
 
 const filesStr = (fullFiles: File[]) => {
@@ -108,6 +109,7 @@ const Sidebar = () => {
 	const abortFnRef = useRef<(() => void) | null>(null)
 
 	const [apiConfig, setApiConfig] = useState<ApiConfig | null>(null)
+	const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([])
 
 	// get Api Config on mount
 	useEffect(() => {
@@ -135,6 +137,11 @@ const Sidebar = () => {
 				if (!files.find(f => f.fsPath === filepath.fsPath)) setFiles(files => [...files, filepath])
 
 			}
+
+			else if (m.type === 'workspaceFiles') {
+				setWorkspaceFiles(m.files)
+			}
+
 			// when get apiConfig, set
 			else if (m.type === 'apiConfig') {
 				setApiConfig(m.apiConfig)
@@ -227,6 +234,8 @@ const Sidebar = () => {
 			<div className="shrink-0 py-4">
 				<div className="input">
 					{/* selection */}
+					<button className="btn btn-sm btn-secondary">+</button>
+					<FilePicker files={workspaceFiles} />
 					{(files.length || selection?.selectionStr) && <div className="p-2 pb-0 space-y-2">
 						{/* selected files */}
 						<FilesSelector files={files} setFiles={setFiles} />

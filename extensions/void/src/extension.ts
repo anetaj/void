@@ -29,6 +29,7 @@ const isIgnored = (
 
 
 const getFileList = (
+	rootPath: string,
 	folderPath: string,
 	excludeConfig: { [key: string]: boolean }
 ): WorkspaceFile[] => {
@@ -38,7 +39,7 @@ const getFileList = (
 	files.forEach((file) => {
 		const filePath = path.join(folderPath, file);
 		const relativeFilePath = path.join(
-			path.relative("/home/aneta/praca/void/extensions/void/", folderPath),
+			path.relative(rootPath, folderPath),
 			file
 		);
 
@@ -51,11 +52,10 @@ const getFileList = (
 					path: filePath,
 					isDir: true,
 				});
-				fileList.push(...getFileList(filePath, excludeConfig));
+				fileList.push(...getFileList(rootPath, filePath, excludeConfig));
 			} else {
 				fileList.push({
 					name: path.basename(filePath),
-					ext: path.extname(filePath),
 					path: filePath,
 				});
 			}
@@ -201,7 +201,7 @@ export function activate(context: vscode.ExtensionContext) {
 						vscode.workspace.workspaceFolders?.reduce(
 							(acc, folder: vscode.WorkspaceFolder) => [
 								...acc,
-								...getFileList(folder.uri.fsPath, patternsToIgnore),
+								...getFileList(folder.uri.fsPath, folder.uri.fsPath, patternsToIgnore),
 							],
 							[] as WorkspaceFile[]
 						) || [];

@@ -10,7 +10,6 @@ type File = { filepath: vscode.Uri, content: string }
 type WorkspaceFile = {
 	name: string,
 	path: string,
-	ext?: string,
 	isDir?: boolean
 }
 

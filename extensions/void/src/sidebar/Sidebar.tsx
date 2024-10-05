@@ -112,6 +112,7 @@ const Sidebar = () => {
 	// get Api Config on mount
 	useEffect(() => {
 		getVSCodeAPI().postMessage({ type: 'getApiConfig' })
+		getVSCodeAPI().postMessage({ type: 'getWorkspaceFiles' })
 	}, [])
 
 	// Receive messages from the extension

@@ -1,14 +1,69 @@
 import * as vscode from 'vscode';
-import { WebviewMessage } from './shared_types';
+import * as fs from 'fs';
+import * as path from 'path';
+import { WebviewMessage, WorkspaceFile } from './shared_types';
 import { CtrlKCodeLensProvider } from './CtrlKCodeLensProvider';
 import { getDiffedLines } from './getDiffedLines';
 import { ApprovalCodeLensProvider } from './ApprovalCodeLensProvider';
 import { SidebarWebviewProvider } from './SidebarWebviewProvider';
 import { ApiConfig } from './common/sendLLMMessage';
+import { minimatch } from 'minimatch';
+
 
 const readFileContentOfUri = async (uri: vscode.Uri) => {
 	return Buffer.from(await vscode.workspace.fs.readFile(uri)).toString('utf8').replace(/\r\n/g, '\n'); // must remove windows \r or every line will appear different because of it
 }
+
+
+const isIgnored = (
+	filePath: string,
+	excludeConfig: { [key: string]: boolean }
+): boolean => {
+	for (const pattern in excludeConfig) {
+		if (minimatch(filePath, pattern)) {
+			return true;
+		}
+	}
+	return false;
+};
+
+
+const getFileList = (
+	folderPath: string,
+	excludeConfig: { [key: string]: boolean }
+): WorkspaceFile[] => {
+	const files = fs.readdirSync(folderPath);
+	const fileList: WorkspaceFile[] = [];
+
+	files.forEach((file) => {
+		const filePath = path.join(folderPath, file);
+		const relativeFilePath = path.join(
+			path.relative("/home/aneta/praca/void/extensions/void/", folderPath),
+			file
+		);
+
+		if (!isIgnored(relativeFilePath, excludeConfig)) {
+			const stats = fs.statSync(filePath);
+
+			if (stats.isDirectory()) {
+				fileList.push({
+					name: path.basename(filePath),
+					path: filePath,
+					isDir: true,
+				});
+				fileList.push(...getFileList(filePath, excludeConfig));
+			} else {
+				fileList.push({
+					name: path.basename(filePath),
+					ext: path.extname(filePath),
+					path: filePath,
+				});
+			}
+		}
+	});
+
+	return fileList;
+};
 
 
 const getApiConfig = () => {
@@ -136,6 +191,21 @@ export function activate(context: vscode.ExtensionContext) {
 
 					webview.postMessage({ type: 'apiConfig', apiConfig } satisfies WebviewMessage)
 
+				}
+				else if (m.type === 'getWorkspaceFiles') {
+
+					const patternsToIgnore = vscode.workspace
+						.getConfiguration("files")
+						.get("exclude") as { [key: string]: boolean };
+					const files =
+						vscode.workspace.workspaceFolders?.reduce(
+							(acc, folder: vscode.WorkspaceFolder) => [
+								...acc,
+								...getFileList(folder.uri.fsPath, patternsToIgnore),
+							],
+							[] as WorkspaceFile[]
+						) || [];
+					webview.postMessage({ type: 'workspaceFiles', files } satisfies WebviewMessage)
 				}
 				else {
 					console.error('unrecognized command', m.type, m)

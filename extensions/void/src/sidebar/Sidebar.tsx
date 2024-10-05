@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, FormEvent } from "react"
 import { ApiConfig, sendLLMMessage } from "../common/sendLLMMessage"
-import { File, Selection, WebviewMessage, WorkspaceFile } from "../shared_types"
+import { File, Selection, WebviewMessage } from "../shared_types"
 import { awaitVSCodeResponse, getVSCodeAPI, resolveAwaitingVSCodeResponse } from "./getVscodeApi"
 
 import { marked } from 'marked';
@@ -109,12 +109,11 @@ const Sidebar = () => {
 	const abortFnRef = useRef<(() => void) | null>(null)
 
 	const [apiConfig, setApiConfig] = useState<ApiConfig | null>(null)
-	const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([])
+	const [workspaceFiles, setWorkspaceFiles] = useState<vscode.Uri[]>([])
 
 	// get Api Config on mount
 	useEffect(() => {
 		getVSCodeAPI().postMessage({ type: 'getApiConfig' })
-		getVSCodeAPI().postMessage({ type: 'getWorkspaceFiles' })
 	}, [])
 
 	// Receive messages from the extension
@@ -220,6 +219,12 @@ const Sidebar = () => {
 		setSelection(null);
 	};
 
+	const onAddFileFromPicker = (file: vscode.Uri) => {
+		if (!files.find((f) => f.fsPath === file.fsPath)) {
+			setFiles((files) => [...files, file]);
+		}
+	};
+
 	return <>
 		<div className="flex flex-col h-screen w-full">
 			<div className="overflow-y-auto overflow-x-hidden space-y-4">
@@ -235,7 +240,7 @@ const Sidebar = () => {
 				<div className="input">
 					{/* selection */}
 					<button className="btn btn-sm btn-secondary">+</button>
-					<FilePicker files={workspaceFiles} />
+					<FilePicker files={workspaceFiles} onAdd={onAddFileFromPicker} />
 					{(files.length || selection?.selectionStr) && <div className="p-2 pb-0 space-y-2">
 						{/* selected files */}
 						<FilesSelector files={files} setFiles={setFiles} />

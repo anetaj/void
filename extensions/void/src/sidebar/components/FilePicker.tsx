@@ -1,40 +1,40 @@
 import React, { useEffect, useState } from "react";
-import { WorkspaceFile } from "../../shared_types";
+import { getVSCodeAPI } from "../getVscodeApi";
+import * as vscode from "vscode";
 
 const MIN_SEARCH_CHARS = 2;
 const MAX_SEARCH_RESULTS = 10;
 
-const FilePicker = ({ files = [] }: { files: WorkspaceFile[] }) => {
-	const [filteredFiles, setFilteredFiles] = useState<WorkspaceFile[]>([]);
+const FilePicker = ({
+	files = [],
+	onAdd,
+}: {
+	files: vscode.Uri[];
+	onAdd: (file: vscode.Uri) => void;
+}) => {
 	const [searchTerm, setSearchTerm] = useState("");
 	const [selectedFileIndex, setSelectedFileIndex] = useState(-1);
 
 	useEffect(() => {
 		if (searchTerm.length >= MIN_SEARCH_CHARS) {
-			const results = files.filter(
-				(file) =>
-					file.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-					!file.isDir // for now, don't show directories in search results
-			);
-			setFilteredFiles(results.slice(0, MAX_SEARCH_RESULTS));
-		} else {
-			setFilteredFiles([]);
+			getVSCodeAPI().postMessage({
+				type: "searchWorkspaceFiles",
+				pattern: `**/*${searchTerm}*`,
+				maxResults: MAX_SEARCH_RESULTS,
+			});
 		}
-	}, [searchTerm, files, setFilteredFiles]);
+	}, [searchTerm]);
 
 	const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
 		if (event.key === "ArrowDown") {
-			setSelectedFileIndex(
-				(prevIndex) => (prevIndex + 1) % filteredFiles.length
-			);
+			setSelectedFileIndex((prevIndex) => (prevIndex + 1) % files.length);
 		} else if (event.key === "ArrowUp") {
 			setSelectedFileIndex(
-				(prevIndex) =>
-					(prevIndex - 1 + filteredFiles.length) % filteredFiles.length
+				(prevIndex) => (prevIndex - 1 + files.length) % files.length
 			);
 		} else if (event.key === "Enter") {
 			if (selectedFileIndex !== -1) {
-				console.log(filteredFiles[selectedFileIndex]);
+				onAdd(files[selectedFileIndex]);
 			}
 		}
 	};
@@ -51,7 +51,7 @@ const FilePicker = ({ files = [] }: { files: WorkspaceFile[] }) => {
 				autoFocus
 			/>
 			<div>
-				{filteredFiles.map((file, index) => (
+				{files.map((file, index) => (
 					<div
 						key={file.path}
 						className={
@@ -59,8 +59,9 @@ const FilePicker = ({ files = [] }: { files: WorkspaceFile[] }) => {
 								? "bg-vscode-button-bg text-vscode-button-fg"
 								: ""
 						}
+						onClick={() => onAdd(file)}
 					>
-						{file.name}
+						{file.path}
 					</div>
 				))}
 			</div>

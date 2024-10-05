@@ -7,12 +7,6 @@ type Selection = { selectionStr: string, selectionRange: vscode.Range, filePath:
 
 type File = { filepath: vscode.Uri, content: string }
 
-type WorkspaceFile = {
-	name: string,
-	path: string,
-	isDir?: boolean
-}
-
 type WebviewMessage = (
 
 	// editor -> sidebar
@@ -34,10 +28,10 @@ type WebviewMessage = (
 	| { type: 'apiConfig', apiConfig: ApiConfig }
 
 	// sidebar -> editor
-	| { type: 'getWorkspaceFiles' }
+	| { type: 'searchWorkspaceFiles', pattern: string, maxResults: number }
 
 	// editor -> sidebar
-	| { type: 'workspaceFiles', files: WorkspaceFile[] }
+	| { type: 'workspaceFiles', files: vscode.Uri[] }
 
 )
 
@@ -46,7 +40,6 @@ type Command = WebviewMessage['type']
 export {
 	Selection,
 	File,
-	WorkspaceFile,
 	WebviewMessage,
 	Command,
 }

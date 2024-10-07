@@ -239,7 +239,6 @@ const Sidebar = () => {
 			<div className="shrink-0 py-4">
 				<div className="input">
 					{/* selection */}
-					<button className="btn btn-sm btn-secondary">+</button>
 					<FilePicker files={workspaceFiles} onAdd={onAddFileFromPicker} />
 					{(files.length || selection?.selectionStr) && <div className="p-2 pb-0 space-y-2">
 						{/* selected files */}

@@ -1,15 +1,9 @@
 import React from "react"
 import * as vscode from "vscode"
-
-const getBasename = (pathStr: string) => {
-	// "unixify" path
-	pathStr = pathStr.replace(/[/\\]+/g, "/") // replace any / or \ or \\ with /
-	const parts = pathStr.split("/") // split on /
-	return parts[parts.length - 1]
-}
+import { getBasename } from "../utils/files"
 
 export const FilesSelector = ({
-	files,
+	files = [],
 	setFiles,
 }: {
 	files: vscode.Uri[]
